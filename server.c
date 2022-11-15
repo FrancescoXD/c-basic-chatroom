@@ -7,14 +7,18 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <errno.h>
-
-#define SERVER_PORT 8080
 
 #define TRUE 1
 #define FALSE 0
 
-int main(void) {
+int main(int argc, char** argv) {
+	if (argc < 3) {
+		fprintf(stderr, "Usage: %s <HOST> <PORT>\n", argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
 	int len, rc, on = 1;
 	int listen_fd; // listen server descriptor
 	int new_sd; // new server descriptor (incoming connection)
@@ -50,7 +54,8 @@ int main(void) {
 
 	// bind the socket
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(SERVER_PORT);
+	addr.sin_port = htons(atoi(argv[2]));
+	inet_aton(argv[1], &addr.sin_addr);
 	rc = bind(listen_fd, (struct sockaddr*)&addr, sizeof(addr));
 	if (rc < 0) {
 		perror("bind() failed");

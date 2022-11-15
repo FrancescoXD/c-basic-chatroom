@@ -8,7 +8,6 @@
 #include <errno.h>
 #include <pthread.h>
 
-#define PORT 8080
 #define DATA_SIZE 1024
 
 void* recv_msg(void* ptr) {
@@ -26,7 +25,12 @@ void* recv_msg(void* ptr) {
 	}
 }
 
-int main(void) {
+int main(int argc, char** argv) {
+	if (argc < 3) {
+		fprintf(stderr, "Usage: %s <HOST> <PORT>\n", argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
 	int sockfd;
 	struct sockaddr_in server;
 	//int numbytes;
@@ -40,8 +44,8 @@ int main(void) {
 	}
 
 	server.sin_family = AF_INET;
-	server.sin_port = htons(PORT);
-	inet_aton("127.0.0.1", &server.sin_addr);
+	server.sin_port = htons(atoi(argv[2]));
+	inet_aton(argv[1], &server.sin_addr);
 
 	int rc = connect(sockfd, (struct sockaddr*)&server, sizeof(struct sockaddr));
 	if (rc < 0) {
