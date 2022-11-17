@@ -17,24 +17,24 @@ void* recv_msg(void* ptr) {
 		rc = recv(*((int*)ptr), buf, DATA_SIZE, 0);
 
 		if (rc == 0) {
-			fprintf(stdout, "No data from server, exiting...\n");
+			fprintf(stdout, "Closing connection...\n");
 			exit(EXIT_SUCCESS);
 		}
 
 		buf[rc] = '\0';
+		fprintf(stdout, "%s\n", buf);
 	}
 }
 
 int main(int argc, char** argv) {
 	if (argc < 3) {
 		fprintf(stderr, "Usage: %s <HOST> <PORT>\n", argv[0]);
+		fprintf(stderr, "Write \'quit\' to exit the client.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	int sockfd;
 	struct sockaddr_in server;
-	//int numbytes;
-	//char buf[DATA_SIZE];
 	pthread_t recv_msg_t;
 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -54,30 +54,21 @@ int main(int argc, char** argv) {
 	}
 
 	pthread_create(&recv_msg_t, NULL, recv_msg, (void*)&sockfd);
-	//pthread_join(recv_msg_t, NULL);
 
 	char str[DATA_SIZE];
 	while (1) {
-		fprintf(stdout, "Send data to the server: ");
 		fgets(str, DATA_SIZE, stdin);
-		rc = send(sockfd, str, strlen(str), 0);
-		if (rc < 0) {
-			perror("send() failed");
-			exit(EXIT_FAILURE);
-		}
 
-		/*numbytes = recv(sockfd, buf, DATA_SIZE, 0);
-		if (numbytes < 0) {
-			perror("recv() failed");
-			exit(EXIT_FAILURE);
-		}
-		buf[numbytes] = '\0';
-		fprintf(stdout, "received %d bytes:\n%s", numbytes, buf);*/
-		
 		str[strcspn(str, "\n")] = '\0';
 		if (strcmp(str, "quit") == 0) {
 			fprintf(stdout, "Exiting...\n");
 			break;
+		}
+
+		rc = send(sockfd, str, strlen(str), 0);
+		if (rc < 0) {
+			perror("send() failed");
+			exit(EXIT_FAILURE);
 		}
 	}
 
