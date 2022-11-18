@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/poll.h>
-#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <netinet/in.h>
@@ -14,6 +13,12 @@
 #define TRUE 1
 #define FALSE 0
 #define MAX_DATA_SIZE 1024
+#define MAX_USER_LEN 30
+
+typedef struct {
+	char username[MAX_USER_LEN];
+	char message[MAX_DATA_SIZE];
+} Message;
 
 void compress_array(int* compress_array_c, int* nfds, struct pollfd* fds) {
 	*compress_array_c = FALSE;
@@ -41,7 +46,7 @@ void main_loop(int* nfds, int timeout, struct pollfd* fds, int listen_fd) {
 	int close_conn;
 	int compress_array_c;
 
-	char buffer[MAX_DATA_SIZE];
+	Message msg;
 
 	do {
 		fprintf(stdout, "Waiting on poll()...\n");
@@ -97,7 +102,7 @@ void main_loop(int* nfds, int timeout, struct pollfd* fds, int listen_fd) {
 				close_conn = FALSE;
 
 				do {
-					rc = recv(fds[i].fd, buffer, sizeof(buffer), 0);
+					rc = recv(fds[i].fd, (void*)&msg, sizeof msg, 0);
 					if (rc < 0) {
 						if (errno != EWOULDBLOCK) {
 							perror("recv() failed");
@@ -115,15 +120,14 @@ void main_loop(int* nfds, int timeout, struct pollfd* fds, int listen_fd) {
 					// data was received
 					len = rc;
 					fprintf(stdout, "Bytes receved: %d\n", len);
-					buffer[len] = '\0';
 					fprintf(stdout, "Sending to all clients...\n");
 
 					int sending_socket = fds[i].fd;
 					for (int k = 1; k < current_size; ++k) {
 						if (fds[k].fd != sending_socket) {
-							fprintf(stdout, "sockfd: %d\n", fds[k].fd);
-							fprintf(stdout, "Buffer (%ld bytes): %s\n", strlen(buffer), buffer);
-							rc = send(fds[k].fd, buffer, len, 0);
+							//fprintf(stdout, "sockfd: %d\n", fds[k].fd);
+							//fprintf(stdout, "Buffer (%d bytes):\nusername: %s\nmessage: %s\n", len, msg.username, msg.message);
+							rc = send(fds[k].fd, (void*)&msg, len, 0);
 							fprintf(stdout, "Bytes sent: %d\n", rc);
 							if (rc < 0) {
 								perror("send() failed");
@@ -175,7 +179,7 @@ int main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 
-	// set non blocking socket (POSIX WAY)
+	// set non blocking socket (POSIX way)
 	rc = fcntl(listen_fd, F_SETFL, O_NONBLOCK);
 	if (rc < 0) {
 		perror("fcntl() failed");

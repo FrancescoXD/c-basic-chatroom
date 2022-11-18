@@ -9,6 +9,12 @@
 #include <pthread.h>
 
 #define MAX_DATA_SIZE 1024
+#define MAX_USER_LEN 30
+
+typedef struct {
+	char username[MAX_USER_LEN];
+	char message[MAX_DATA_SIZE];
+} Message;
 
 void remove_newline(char* str) {
 	while (*str) {
@@ -20,18 +26,17 @@ void remove_newline(char* str) {
 }
 
 void* recv_msg(void* ptr) {
-	char buf[MAX_DATA_SIZE];
+	Message msg;
 	int rc;
 	while (1) {
-		rc = recv(*((int*)ptr), buf, MAX_DATA_SIZE, 0);
+		rc = recv(*((int*)ptr), (void*)&msg, sizeof msg, 0);
 
 		if (rc == 0) {
 			fprintf(stdout, "Closing connection...\n");
 			exit(EXIT_SUCCESS);
 		}
 
-		buf[rc] = '\0';
-		fprintf(stdout, "%s\n", buf);
+		fprintf(stdout, "%s: %s\n", msg.username, msg.message);
 	}
 }
 
@@ -64,6 +69,14 @@ int main(int argc, char** argv) {
 
 	pthread_create(&recv_msg_t, NULL, recv_msg, (void*)&sockfd);
 
+	Message msg;
+
+	char username[MAX_USER_LEN];
+	fprintf(stdout, "Username: ");
+	fgets(username, MAX_USER_LEN, stdin);
+	remove_newline(username);
+	strcpy(msg.username, username);
+
 	char str[MAX_DATA_SIZE];
 	while (1) {
 		fgets(str, MAX_DATA_SIZE, stdin);
@@ -73,8 +86,9 @@ int main(int argc, char** argv) {
 			fprintf(stdout, "Exiting...\n");
 			break;
 		}
+		strcpy(msg.message, str);
 
-		rc = send(sockfd, str, strlen(str), 0);
+		rc = send(sockfd, (void*)&msg, sizeof msg, 0);
 		if (rc < 0) {
 			perror("send() failed");
 			exit(EXIT_FAILURE);
