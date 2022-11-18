@@ -9,9 +9,11 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #define TRUE 1
 #define FALSE 0
+#define MAX_DATA_SIZE 1024
 
 void compress_array(int* compress_array_c, int* nfds, struct pollfd* fds) {
 	*compress_array_c = FALSE;
@@ -39,7 +41,7 @@ void main_loop(int* nfds, int timeout, struct pollfd* fds, int listen_fd) {
 	int close_conn;
 	int compress_array_c;
 
-	char buffer[1024];
+	char buffer[MAX_DATA_SIZE];
 
 	do {
 		fprintf(stdout, "Waiting on poll()...\n");
@@ -76,6 +78,12 @@ void main_loop(int* nfds, int timeout, struct pollfd* fds, int listen_fd) {
 							end_server = TRUE;
 						}
 						break;
+					}
+
+					rc = fcntl(new_sd, F_SETFL, O_NONBLOCK);
+					if (rc < 0) {
+						perror("fcntl() failed");
+						end_server = TRUE;
 					}
 
 					// add the incoming connection to pollfd structure
@@ -156,6 +164,7 @@ int main(int argc, char** argv) {
 	listen_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (listen_fd < 0) {
 		perror("socket() failed");
+		exit(EXIT_FAILURE);
 	}
 
 	// allow socket to be reusable
@@ -166,10 +175,10 @@ int main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 
-	// set non blocking socket
-	rc = ioctl(listen_fd, FIONBIO, (char*)&on);
+	// set non blocking socket (POSIX WAY)
+	rc = fcntl(listen_fd, F_SETFL, O_NONBLOCK);
 	if (rc < 0) {
-		perror("ioctl() failed");
+		perror("fcntl() failed");
 		close(listen_fd);
 		exit(EXIT_FAILURE);
 	}

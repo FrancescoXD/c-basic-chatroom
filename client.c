@@ -8,13 +8,22 @@
 #include <errno.h>
 #include <pthread.h>
 
-#define DATA_SIZE 1024
+#define MAX_DATA_SIZE 1024
+
+void remove_newline(char* str) {
+	while (*str) {
+		if (*str == '\n') {
+			*str = '\0';
+		}
+		str++;
+	}
+}
 
 void* recv_msg(void* ptr) {
-	char buf[DATA_SIZE];
+	char buf[MAX_DATA_SIZE];
 	int rc;
 	while (1) {
-		rc = recv(*((int*)ptr), buf, DATA_SIZE, 0);
+		rc = recv(*((int*)ptr), buf, MAX_DATA_SIZE, 0);
 
 		if (rc == 0) {
 			fprintf(stdout, "Closing connection...\n");
@@ -55,11 +64,11 @@ int main(int argc, char** argv) {
 
 	pthread_create(&recv_msg_t, NULL, recv_msg, (void*)&sockfd);
 
-	char str[DATA_SIZE];
+	char str[MAX_DATA_SIZE];
 	while (1) {
-		fgets(str, DATA_SIZE, stdin);
+		fgets(str, MAX_DATA_SIZE, stdin);
 
-		str[strcspn(str, "\n")] = '\0';
+		remove_newline(str);
 		if (strcmp(str, "quit") == 0) {
 			fprintf(stdout, "Exiting...\n");
 			break;
