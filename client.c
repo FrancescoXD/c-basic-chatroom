@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 	struct sockaddr_in server;
 	pthread_t recv_msg_t;
 
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	sockfd = socket(PF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {
 		perror("socket() failed");
 		exit(EXIT_FAILURE);

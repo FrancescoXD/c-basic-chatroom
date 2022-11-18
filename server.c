@@ -165,7 +165,7 @@ int main(int argc, char** argv) {
 	struct pollfd fds[200];
 	int nfds = 1;
 
-	listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+	listen_fd = socket(PF_INET, SOCK_STREAM, 0);
 	if (listen_fd < 0) {
 		perror("socket() failed");
 		exit(EXIT_FAILURE);
