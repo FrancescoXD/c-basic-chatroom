@@ -12,4 +12,4 @@ $ ./compile.sh
 Open a terminal and run `./server <HOST> <PORT>` and then run clients with `./client <HOST> <PORT>`.
 
 ## Info
-If no client try to connect to the server in 3 minutes, it exits.
+If no client tries to connect to the server in 3 minutes, it exits.
