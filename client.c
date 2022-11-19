@@ -50,6 +50,7 @@ int main(int argc, char** argv) {
 	int sockfd;
 	struct sockaddr_in server;
 	pthread_t recv_msg_t;
+	Message msg;
 
 	sockfd = socket(PF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {
@@ -68,8 +69,6 @@ int main(int argc, char** argv) {
 	}
 
 	pthread_create(&recv_msg_t, NULL, recv_msg, (void*)&sockfd);
-
-	Message msg;
 
 	char username[MAX_USER_LEN];
 	fprintf(stdout, "Username: ");
