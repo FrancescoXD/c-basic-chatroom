@@ -1,20 +1,4 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <string.h>
-#include <errno.h>
-#include <pthread.h>
-
-#define MAX_DATA_SIZE 1024
-#define MAX_USER_LEN 30
-
-typedef struct {
-	char username[MAX_USER_LEN];
-	char message[MAX_DATA_SIZE];
-} Message;
+#include "client.h"
 
 void remove_newline(char* str) {
 	while (*str) {
@@ -40,6 +24,21 @@ void* recv_msg(void* ptr) {
 	}
 }
 
+void send_username(int fd, char* username) {
+	int rc = send(fd, username, sizeof username, 0);
+	if (rc < 0) {
+		perror("send() failed");
+		exit(EXIT_FAILURE);
+	}
+
+	char* rcvmsg[MAX_DATA_SIZE];
+	rc = recv(fd, rcvmsg, MAX_DATA_SIZE, 0);
+	if (rc == 0) {
+		fprintf(stderr, "Username already taken!");
+		exit(EXIT_FAILURE);
+	}
+}
+
 int main(int argc, char** argv) {
 	if (argc < 3) {
 		fprintf(stderr, "Usage: %s <HOST> <PORT>\n", argv[0]);
@@ -62,19 +61,21 @@ int main(int argc, char** argv) {
 	server.sin_port = htons(atoi(argv[2]));
 	inet_aton(argv[1], &server.sin_addr);
 
+	char username[MAX_USER_LEN];
+	fprintf(stdout, "Username: ");
+	fgets(username, MAX_USER_LEN, stdin);
+	remove_newline(username);
+	strcpy(msg.username, username);
+
 	int rc = connect(sockfd, (struct sockaddr*)&server, sizeof(struct sockaddr));
 	if (rc < 0) {
 		perror("connect() failed");
 		exit(EXIT_FAILURE);
 	}
 
-	pthread_create(&recv_msg_t, NULL, recv_msg, (void*)&sockfd);
+	//send_username(sockfd, msg.message);
 
-	char username[MAX_USER_LEN];
-	fprintf(stdout, "Username: ");
-	fgets(username, MAX_USER_LEN, stdin);
-	remove_newline(username);
-	strcpy(msg.username, username);
+	pthread_create(&recv_msg_t, NULL, recv_msg, (void*)&sockfd);
 
 	char str[MAX_DATA_SIZE];
 	while (1) {

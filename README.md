@@ -1,5 +1,5 @@
 # c-basic-chatroom
-A basic chatroom fully written in C with sockets and poll
+A basic chatroom fully written in C with sockets and epoll
 
 ## How to compile
 Just run:
